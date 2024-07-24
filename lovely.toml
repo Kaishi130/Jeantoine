@@ -1,0 +1,151 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = 0
+
+[[patches]]
+[patches.pattern]
+target = 'functions/common_events.lua'
+pattern = "function ease_background_colour_blind(state, blind_override)"
+position = 'before'
+match_indent = true
+payload = '''
+
+local function invert_color(color, invert_red, invert_green, invert_blue)
+    local inverted_color = {
+    1 - (color[1] or 0),
+    1 - (color[2] or 0),
+    1 - (color[3] or 0),
+    color[4] or 1
+    }
+
+    if invert_red then
+        inverted_color[1] = color[1] or 0
+    end
+    if invert_green then
+        inverted_color[2] = color[2] or 0
+    end
+    if invert_blue then
+        inverted_color[3] = color[3] or 0
+    end
+
+    return inverted_color
+end
+
+'''
+
+[[patches]]
+[patches.pattern]
+target = 'functions/misc_functions.lua'
+pattern = "function get_blind_main_colour(blind) --either in the form of the blind key for the P_BLINDS table or type"
+position = 'before'
+match_indent = true
+payload = '''
+
+local function invert_color(color, invert_red, invert_green, invert_blue)
+    local inverted_color = {
+    1 - (color[1] or 0),
+    1 - (color[2] or 0),
+    1 - (color[3] or 0),
+    color[4] or 1
+    }
+
+    if invert_red then
+        inverted_color[1] = color[1] or 0
+    end
+    if invert_green then
+        inverted_color[2] = color[2] or 0
+    end
+    if invert_blue then
+        inverted_color[3] = color[3] or 0
+    end
+
+    return inverted_color
+end
+
+'''
+
+[[patches]]
+[patches.pattern]
+target = 'functions/common_events.lua'
+pattern = "boss_col = v.boss_colour"
+position = 'after'
+match_indent = true
+payload = '''
+
+if G.GAME.negative then
+    boss_col = invert_color(boss_col)
+end
+
+'''
+
+[[patches]]
+[patches.pattern]
+target = 'functions/common_events.lua'
+pattern = "boss_col = v.boss_colour or G.C.BLACK"
+position = 'after'
+match_indent = true
+payload = '''
+
+if G.GAME.negative then
+    boss_col = invert_color(boss_col)
+end
+
+'''
+
+[[patches]]
+[patches.pattern]
+target = 'functions/misc_functions.lua'
+pattern = "G.P_BLINDS[blind].boss_colour or"
+position = 'before'
+match_indent = true
+payload = '''G.GAME and G.GAME.blind and G.GAME.negative and invert_color(G.P_BLINDS[blind].boss_colour) or'''
+
+[[patches]]
+[patches.pattern]
+target = 'blind.lua'
+pattern = "self.children.animatedSprite:draw_shader('dissolve', 0.1)"
+position = 'at'
+match_indent = true
+payload = '''if G.GAME and G.GAME.blind and G.GAME.negative then self.children.animatedSprite:draw_shader('chic_negative_blind', 0.1) else self.children.animatedSprite:draw_shader('dissolve', 0.1) end'''
+
+[[patches]]
+[patches.pattern]
+target = 'blind.lua'
+pattern = "self.children.animatedSprite:draw_shader('dissolve')"
+position = 'at'
+match_indent = true
+payload = '''if G.GAME and G.GAME.blind and G.GAME.negative then self.children.animatedSprite:draw_shader('chic_negative_blind') else self.children.animatedSprite:draw_shader('dissolve') end'''
+
+[[patches]]
+[patches.pattern]
+target = 'functions\UI_definitions.lua'
+pattern = "{shader = 'dissolve', shadow_height = 0.05}"
+position = 'at'
+match_indent = true
+payload = '''{shader = G.GAME and G.GAME.blind and G.GAME.negative and 'chic_negative_blind' or 'dissolve', shadow_height = 0.05}'''
+
+[[patches]]
+[patches.pattern]
+target = 'blind.lua'
+pattern = "function Blind:defeat(silent)"
+position = 'after'
+match_indent = true
+payload = '''G.GAME.negative = nil'''
+
+[[patches]]
+[patches.pattern]
+target = 'card.lua'
+pattern = "if self.ability.name == 'Chicot' and not context.blueprint"
+position = 'after'
+match_indent = true
+payload = '''and false'''
+
+[[patches]]
+[patches.pattern]
+target = 'card.lua'
+pattern = "if self.ability.name == 'Chicot' and G.GAME.blind and G.GAME.blind.boss and not G.GAME.blind.disabled then"
+position = 'at'
+match_indent = true
+payload = '''if self.ability.name == 'Chicot' and G.GAME.blind and G.GAME.blind.boss and not G.GAME.blind.disabled and false then'''
+
